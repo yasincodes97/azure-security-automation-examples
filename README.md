@@ -22,4 +22,5 @@ I'm a Security Consultant / Security Engineer working on Azure-based security au
 
 ## Disclaimer
 
-All examples in this repository use fictional data, placeholder identifiers, and generalized logic. No real customer data, credentials, or proprietary business logic is included.
+All examples in this repository use fictional data, placeholder identifiers, and generalized logic. 
+No real customer data, credentials, or proprietary business logic is included.
