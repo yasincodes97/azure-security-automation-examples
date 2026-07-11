@@ -1,6 +1,6 @@
 # Azure Security Automation Examples
 
-A collection of example scripts, queries, and templates demonstrating security automation patterns for Microsoft Azure environments — threat detection, vulnerability management, and automated incident response.
+A collection of example scripts, queries, and templates demonstrating security automation patterns for Microsoft Azure environments - threat detection and vulnerability management.
 
 These examples are generalized and anonymized from real-world security automation work, showcasing practical patterns rather than theoretical exercises.
 
@@ -8,16 +8,16 @@ These examples are generalized and anonymized from real-world security automatio
 
 | Folder | Description |
 |---|---|
-| [`kql-queries/`](./kql-queries) | KQL queries for Microsoft Sentinel & Defender XDR — threat hunting, suspicious sign-in detection, and alert triage |
-| [`logic-app-templates/`](./logic-app-templates) | Azure Logic App JSON templates for security automation (e.g. automated ticket creation from security findings) |
+| [`kql-queries/`](./kql-queries) | KQL queries for Microsoft Sentinel & Defender XDR - threat hunting, suspicious sign-in detection, and alert triage |
+| [`logic-app-templates/`](./logic-app-templates) | Azure Logic App JSON templates for security automation |
 | [`python-security-scripts/`](./python-security-scripts) | Python scripts for security automation and API-based tooling |
 
 ## About Me
 
-I'm a Security Consultant / Security Engineer working on Azure-based security automation, threat detection, and vulnerability management. My work focuses on building reliable, production-ready automation — not just proof-of-concepts — with proper error handling and logging.
+I'm a Security Consultant / Security Engineer working on Azure-based security automation, threat detection, and vulnerability management. My work focuses on building reliable, production-ready automation - not just proof-of-concepts - with proper error handling and logging.
 
 - 🔗 [LinkedIn](https://www.linkedin.com/in/yasinkapisiz/)
-- 💼 [Fiverr](https://www.fiverr.com) — Azure Security Automation
+- 💼 [Fiverr](https://www.fiverr.com/s/bd1PYNX) — Azure Security Automation
 - 📧 yasinkapi.97@gmail.com
 
 ## Disclaimer
