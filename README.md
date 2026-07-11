@@ -1,25 +1,34 @@
-# Azure Security Automation Examples
+# Python Security & Automation Scripts
 
-A collection of example scripts, queries, and templates demonstrating security automation patterns for Microsoft Azure environments - threat detection and vulnerability management.
+Example Python scripts demonstrating API-based automation and tooling for Azure, Microsoft Graph, and general IT operations.
 
-These examples are generalized and anonymized from real-world security automation work, showcasing practical patterns rather than theoretical exercises.
+## Scripts
 
-## Contents
-
-| Folder | Description |
+| File | Purpose |
 |---|---|
-| [`kql-queries/`](./kql-queries) | KQL queries for Microsoft Sentinel & Defender XDR - threat hunting, suspicious sign-in detection, and alert triage |
-| [`logic-app-templates/`](./logic-app-templates) | Azure Logic App JSON templates for security automation |
-| [`python-security-scripts/`](./python-security-scripts) | Python scripts for security automation and API-based tooling |
+| [`defender_vulnerability_report.py`](./defender_vulnerability_report.py) | Fetches high-severity vulnerabilities from the Microsoft Defender for Endpoint API, filters by exploit availability, and exports a prioritized CSV report |
+| [`entra_stale_accounts_report.py`](./entra_stale_accounts_report.py) | Queries Microsoft Graph for user accounts with no recent sign-in activity and exports a CSV report for access review purposes |
+| [`log_file_analyzer.py`](./log_file_analyzer.py) | Parses a text-based log file and summarizes log levels, time range, and the most frequent error messages |
+| [`api_health_checker.py`](./api_health_checker.py) | Checks a list of HTTP endpoints for availability and response time, flagging down or slow-responding services |
 
-## About Me
+## Requirements
 
-I'm a Security Consultant / Security Engineer working on Azure-based security automation, threat detection, and vulnerability management. My work focuses on building reliable, production-ready automation - not just proof-of-concepts - with proper error handling and logging.
+```
+pip install requests msal
+```
 
-- 🔗 [LinkedIn](https://www.linkedin.com/in/yasinkapisiz/)
-- 💼 [Fiverr](https://www.fiverr.com/s/bd1PYNX) 
-- 📧 yasinkapi.97@gmail.com
+## Setup
 
-## Disclaimer
+Scripts that use Microsoft Graph or Defender APIs authenticate via `msal` using Entra ID app registration credentials. Set these as environment variables - never hardcode credentials in scripts:
 
-All examples in this repository use fictional data, placeholder identifiers, and generalized logic. No real customer data, credentials, or proprietary business logic is included.
+```bash
+export TENANT_ID="<your-tenant-id>"
+export CLIENT_ID="<your-client-id>"
+export CLIENT_SECRET="<your-client-secret>"
+```
+
+`log_file_analyzer.py` and `api_health_checker.py` have no authentication requirements and can be run directly.
+
+## Note
+
+These are simplified examples for demonstration purposes. Production usage should include additional error handling, pagination for large result sets (where not already included), and rate-limit handling per the relevant API's guidelines.
