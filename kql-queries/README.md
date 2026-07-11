@@ -1,4 +1,4 @@
-# KQL Queries — Microsoft Sentinel & Defender XDR
+# KQL Queries - Microsoft Sentinel & Defender XDR
 
 Example KQL (Kusto Query Language) queries for threat hunting, advanced hunting, and security alert triage in Microsoft Sentinel and Microsoft Defender XDR.
 
@@ -15,4 +15,4 @@ Example KQL (Kusto Query Language) queries for threat hunting, advanced hunting,
 - Time filters are always applied first to reduce scan volume
 - `has` / `has_any` preferred over `contains` for indexed performance where applicable
 - `project` used early to reduce returned fields
-- Queries are written to be adapted to your own tenant's table schema — table and column names may vary slightly depending on your Microsoft 365 Defender / Sentinel configuration
+- Queries are written to be adapted to your own tenant's table schema - table and column names may vary slightly depending on your Microsoft 365 Defender / Sentinel configuration
