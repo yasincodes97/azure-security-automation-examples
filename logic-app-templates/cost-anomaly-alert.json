@@ -1,0 +1,156 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {
+        "type": "Object",
+        "defaultValue": {}
+      }
+    },
+    "triggers": {
+      "Daily_recurrence": {
+        "type": "Recurrence",
+        "recurrence": {
+          "frequency": "Day",
+          "interval": 1,
+          "schedule": {
+            "hours": ["7"]
+          }
+        }
+      }
+    },
+    "actions": {
+      "Get_yesterdays_cost": {
+        "type": "Http",
+        "runAfter": {},
+        "inputs": {
+          "method": "POST",
+          "uri": "https://management.azure.com/subscriptions/<your-subscription-id>/providers/Microsoft.CostManagement/query?api-version=2023-11-01",
+          "authentication": {
+            "type": "ManagedServiceIdentity"
+          },
+          "body": {
+            "type": "ActualCost",
+            "timeframe": "Custom",
+            "timePeriod": {
+              "from": "@formatDateTime(addDays(utcNow(), -1), 'yyyy-MM-dd')",
+              "to": "@formatDateTime(utcNow(), 'yyyy-MM-dd')"
+            },
+            "dataset": {
+              "granularity": "Daily",
+              "aggregation": {
+                "totalCost": {
+                  "name": "Cost",
+                  "function": "Sum"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Get_baseline_average_from_storage": {
+        "type": "ApiConnection",
+        "runAfter": {
+          "Get_yesterdays_cost": ["Succeeded"]
+        },
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['azuretables']['connectionId']"
+            }
+          },
+          "method": "get",
+          "path": "/v2/storageAccounts/@{encodeURIComponent('<your-storage-account>')}/tables/@{encodeURIComponent('CostBaseline')}/entities(PartitionKey='baseline',RowKey='dailyAverage')"
+        }
+      },
+      "Compose_comparison": {
+        "type": "Compose",
+        "runAfter": {
+          "Get_baseline_average_from_storage": ["Succeeded"]
+        },
+        "inputs": {
+          "yesterdayCost": "@body('Get_yesterdays_cost')?['properties']?['rows']?[0]?[0]",
+          "baselineAverage": "@body('Get_baseline_average_from_storage')?['Value']",
+          "percentIncrease": "@div(mul(sub(body('Get_yesterdays_cost')?['properties']?['rows']?[0]?[0], body('Get_baseline_average_from_storage')?['Value']), 100), body('Get_baseline_average_from_storage')?['Value'])"
+        }
+      },
+      "Condition_cost_anomaly_detected": {
+        "type": "If",
+        "runAfter": {
+          "Compose_comparison": ["Succeeded"]
+        },
+        "expression": {
+          "greater": [
+            "@outputs('Compose_comparison')?['percentIncrease']",
+            20
+          ]
+        },
+        "actions": {
+          "Post_alert_to_Teams": {
+            "type": "ApiConnection",
+            "runAfter": {},
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['teams']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/flowbot/actions/notification/recipienttypes/channel",
+              "body": {
+                "recipient": {
+                  "channelId": "<your-teams-channel-id>"
+                },
+                "messageBody": "<p>Azure cost anomaly detected: yesterday's spend was @{outputs('Compose_comparison')?['percentIncrease']}% above the daily baseline average. Please review the Cost Management dashboard.</p>"
+              }
+            }
+          },
+          "Log_anomaly_to_Log_Analytics": {
+            "type": "ApiConnection",
+            "runAfter": {
+              "Post_alert_to_Teams": ["Succeeded"]
+            },
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['azureloganalyticsdatacollector']['connectionId']"
+                }
+              },
+              "method": "post",
+              "path": "/v1/workspaces/@{encodeURIComponent('<your-log-workspace>')}/tables/CostAnomalyLog_CL",
+              "body": {
+                "YesterdayCost": "@outputs('Compose_comparison')?['yesterdayCost']",
+                "BaselineAverage": "@outputs('Compose_comparison')?['baselineAverage']",
+                "PercentIncrease": "@outputs('Compose_comparison')?['percentIncrease']",
+                "Timestamp": "@utcNow()"
+              }
+            }
+          }
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "parameters": {
+    "$connections": {
+      "value": {
+        "azuretables": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "azuretables",
+          "id": "<your-managed-api-id>"
+        },
+        "teams": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "teams",
+          "id": "<your-managed-api-id>"
+        },
+        "azureloganalyticsdatacollector": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "azureloganalyticsdatacollector",
+          "id": "<your-managed-api-id>"
+        }
+      }
+    }
+  }
+}
