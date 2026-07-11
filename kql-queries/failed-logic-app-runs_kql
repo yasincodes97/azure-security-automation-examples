@@ -1,0 +1,19 @@
+// Failed Logic App Run Monitoring
+// Surfaces failed security automation workflow executions for triage
+// Table: AzureActivity
+
+AzureActivity
+| where TimeGenerated > ago(7d)
+| where OperationNameValue has "Microsoft.Logic/workflows"
+| where ActivityStatusValue == "Failed"
+| project TimeGenerated, ResourceGroup, Resource,
+          OperationName = OperationNameValue,
+          StatusCode = ActivitySubstatusValue,
+          Caller
+| summarize
+    FailureCount = count(),
+    LastFailure = max(TimeGenerated),
+    StatusCodes = make_set(StatusCode)
+    by Resource, ResourceGroup
+| where FailureCount > 1 // filter out one-off transient failures
+| order by FailureCount desc
