@@ -17,7 +17,7 @@ These examples use generalized, fictional data and are built to show practical p
 I'm a Security Consultant / Security Engineer working on Azure-based security automation, threat detection, and vulnerability management. My work focuses on building reliable, production-ready automation - not just proof-of-concepts - with proper error handling and logging.
 
 - 🔗 [LinkedIn](https://www.linkedin.com/in/yasinkapisiz/)
-- 💼 [Fiverr](https://www.fiverr.com) - Azure Security Automation
+- 💼 [Fiverr](https://www.fiverr.com) 
 - 📧 yasinkapi.97@gmail.com
 
 ## Disclaimer
