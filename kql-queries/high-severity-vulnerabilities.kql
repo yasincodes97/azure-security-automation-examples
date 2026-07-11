@@ -1,19 +1,23 @@
-// Failed Logic App Run Monitoring
-// Surfaces failed security automation workflow executions for triage
-// Table: AzureActivity
+// High-Severity Vulnerability Triage
+// Surfaces High/Critical CVSS vulnerabilities from Microsoft Defender for Endpoint
+// with exploit availability, joined against device criticality context.
+// Tables: DeviceTvmSoftwareVulnerabilities, DeviceInfo (Advanced Hunting)
 
-AzureActivity
-| where TimeGenerated > ago(7d)
-| where OperationNameValue has "Microsoft.Logic/workflows"
-| where ActivityStatusValue == "Failed"
-| project TimeGenerated, ResourceGroup, Resource,
-          OperationName = OperationNameValue,
-          StatusCode = ActivitySubstatusValue,
-          Caller
+DeviceTvmSoftwareVulnerabilities
+| where TimeGenerated > ago(1d)
+| where VulnerabilitySeverityLevel in ("High", "Critical")
+| where IsExploitAvailable == true
+| project DeviceId, DeviceName, CveId, VulnerabilitySeverityLevel,
+          SoftwareName, SoftwareVendor, RecommendedSecurityUpdate
+| join kind=inner (
+    DeviceInfo
+    | where TimeGenerated > ago(1d)
+    | summarize arg_max(TimeGenerated, OSPlatform, DeviceId) by DeviceId
+    | project DeviceId, OSPlatform
+) on DeviceId
+| where OSPlatform != "Android" // exclude mobile devices per posture scoping
 | summarize
-    FailureCount = count(),
-    LastFailure = max(TimeGenerated),
-    StatusCodes = make_set(StatusCode)
-    by Resource, ResourceGroup
-| where FailureCount > 1 // filter out one-off transient failures
-| order by FailureCount desc
+    AffectedDevices = dcount(DeviceId),
+    Devices = make_set(DeviceName, 10)
+    by CveId, VulnerabilitySeverityLevel, SoftwareName
+| order by AffectedDevices desc
