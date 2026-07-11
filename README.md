@@ -29,6 +29,6 @@ export CLIENT_SECRET="<your-client-secret>"
 
 `log_file_analyzer.py` and `api_health_checker.py` have no authentication requirements and can be run directly.
 
-## Note
+## Disclaimer
 
 These are simplified examples for demonstration purposes. Production usage should include additional error handling, pagination for large result sets (where not already included), and rate-limit handling per the relevant API's guidelines.
