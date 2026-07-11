@@ -1,0 +1,136 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {
+        "type": "Object",
+        "defaultValue": {}
+      }
+    },
+    "triggers": {
+      "When_a_user_account_is_disabled_in_Entra_ID": {
+        "type": "ApiConnection",
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 15
+        },
+        "inputs": {
+          "host": {
+            "connection": {
+              "name": "@parameters('$connections')['azuread']['connectionId']"
+            }
+          },
+          "method": "get",
+          "path": "/users",
+          "queries": {
+            "$filter": "accountEnabled eq false",
+            "$select": "id,displayName,userPrincipalName,department"
+          }
+        }
+      }
+    },
+    "actions": {
+      "For_each_disabled_user": {
+        "type": "Foreach",
+        "foreach": "@body('When_a_user_account_is_disabled_in_Entra_ID')?['value']",
+        "runAfter": {},
+        "actions": {
+          "Check_if_already_notified": {
+            "type": "ApiConnection",
+            "runAfter": {},
+            "inputs": {
+              "host": {
+                "connection": {
+                  "name": "@parameters('$connections')['azuretables']['connectionId']"
+                }
+              },
+              "method": "get",
+              "path": "/v2/storageAccounts/@{encodeURIComponent('<your-storage-account>')}/tables/@{encodeURIComponent('OffboardingNotifications')}/entities(PartitionKey='notified',RowKey='@{encodeURIComponent(items('For_each_disabled_user')?['id'])}')",
+              "operationOptions": "SuppressWorkflowHeaders"
+            },
+            "runtimeConfiguration": {
+              "operationOptions": "SuppressWorkflowHeaders"
+            }
+          },
+          "Condition_not_yet_notified": {
+            "type": "If",
+            "runAfter": {
+              "Check_if_already_notified": ["Succeeded", "Failed"]
+            },
+            "expression": {
+              "equals": [
+                "@outputs('Check_if_already_notified')?['statusCode']",
+                404
+              ]
+            },
+            "actions": {
+              "Post_notification_to_Teams": {
+                "type": "ApiConnection",
+                "runAfter": {},
+                "inputs": {
+                  "host": {
+                    "connection": {
+                      "name": "@parameters('$connections')['teams']['connectionId']"
+                    }
+                  },
+                  "method": "post",
+                  "path": "/flowbot/actions/notification/recipienttypes/channel",
+                  "body": {
+                    "recipient": {
+                      "channelId": "<your-teams-channel-id>"
+                    },
+                    "messageBody": "<p>User account disabled: <strong>@{items('For_each_disabled_user')?['displayName']}</strong> (@{items('For_each_disabled_user')?['userPrincipalName']}) - Department: @{items('For_each_disabled_user')?['department']}. Please confirm offboarding checklist completion (license removal, mailbox handling, group cleanup).</p>"
+                  }
+                }
+              },
+              "Record_notification_sent": {
+                "type": "ApiConnection",
+                "runAfter": {
+                  "Post_notification_to_Teams": ["Succeeded"]
+                },
+                "inputs": {
+                  "host": {
+                    "connection": {
+                      "name": "@parameters('$connections')['azuretables']['connectionId']"
+                    }
+                  },
+                  "method": "post",
+                  "path": "/v2/storageAccounts/@{encodeURIComponent('<your-storage-account>')}/tables/@{encodeURIComponent('OffboardingNotifications')}/entities",
+                  "body": {
+                    "PartitionKey": "notified",
+                    "RowKey": "@{items('For_each_disabled_user')?['id']}",
+                    "UserPrincipalName": "@{items('For_each_disabled_user')?['userPrincipalName']}",
+                    "NotifiedAt": "@utcNow()"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "parameters": {
+    "$connections": {
+      "value": {
+        "azuread": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "azuread",
+          "id": "<your-managed-api-id>"
+        },
+        "azuretables": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "azuretables",
+          "id": "<your-managed-api-id>"
+        },
+        "teams": {
+          "connectionId": "<your-connection-id>",
+          "connectionName": "teams",
+          "id": "<your-managed-api-id>"
+        }
+      }
+    }
+  }
+}
